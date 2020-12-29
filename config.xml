@@ -1,0 +1,317 @@
+<main>
+    <scripts>
+        <script name="msinfoReport" enabled="true" type="winbatch" extra_file="$env:TEMP\msInfo32.txt">
+            <![CDATA[
+            msinfo32.exe /report "%TEMP%\msInfo32.txt"
+            ]]>
+        </script>
+        <script name="gpResultHtml" enabled="true" type="winbatch" extra_file="$env:TEMP\gpresult.html">
+            <![CDATA[
+            gpresult.exe /SCOPE COMPUTER /H "%TEMP%\gpresult.html" /f
+            ]]>
+        </script>
+        <script name="whoAmI" enabled="true" type="winbatch">
+            <![CDATA[
+            whoami /all
+            ]]>
+        </script>
+        <script name="pingCLTHMP601" enabled="true" type="winbatch">
+            <![CDATA[
+            ping clthmp601.ad-akint.net
+            ]]>
+        </script>
+        <script name="winUpdateLog" enabled="true" type="powershell" extra_file="$env:TEMP\winUpdateLog.txt">
+            <![CDATA[
+            Stop-Service wuauserv
+            Stop-Service BITS
+            Get-WindowsUpdateLog -LogPath "$env:TEMP\winUpdateLog.txt"
+            Start-Service wuauserv
+            Start-Service BITS
+            ]]>
+        </script>
+        <script name="winServices" enabled="true" type="powershell">
+            <![CDATA[
+            Get-Service | Format-Table -AutoSize `
+			    -Property DisplayName, Name, Status, StartType
+            ]]>
+        </script>
+        <script name="schTaskWinUpdate" enabled="true" type="winbatch">
+            <![CDATA[
+            schtasks.exe /query /v /TN \Microsoft\Windows\WindowsUpdate\
+            ]]>
+        </script>
+        <script name="bitsAdmin" enabled="true" type="winbatch">
+            <![CDATA[
+            bitsadmin.exe /list /allusers /verbose
+            ]]>
+        </script>
+        <script name="dismGetInternationalSettings" enabled="true" type="winbatch">
+            <![CDATA[
+            dism.exe /online /Get-Intl
+            ]]>
+        </script>
+        <script name="hotFix" enabled="true" type="powershell">
+            <![CDATA[
+            Get-Hotfix
+            ]]>
+        </script>
+        <script name="winUpdateDb" enabled="true" type="powershell">
+            <![CDATA[
+            $session = New-Object -ComObject "Microsoft.Update.Session"
+            $searcher = $session.CreateUpdateSearcher()
+            $historyCount = $searcher.GetTotalHistoryCount()
+            $searcher.QueryHistory(0, $historyCount)
+            ]]>
+        </script>
+        <script name="winUpdateConfig" enabled="true" type="powershell">
+            <![CDATA[
+            $session = New-Object -ComObject "Microsoft.Update.ServiceManager"
+		    $session.Services
+            ]]>
+        </script>
+        <script name="dismGetOnlinePackages" enabled="true" type="powershell">
+            <![CDATA[
+            Get-WindowsPackage -Online | Format-Table -AutoSize
+            ]]>
+        </script>
+        <script name="dismCheckHealthImageOutput" enabled="true" type="powershell" extra_file="$env:TEMP\dismCheckHealthImage.txt">
+            <![CDATA[
+            Repair-WindowsImage -Online -CheckHealth -LogPath "$env:TEMP\dismCheckHealthImage.txt"
+            ]]>
+        </script>
+        <script name="dismGetOnlineFeatures" enabled="true" type="powershell">
+            <![CDATA[
+            Get-WindowsOptionalFeature -Online | Format-Table -AutoSize
+            ]]>
+        </script>
+        <script name="sccmClientConfig" enabled="true" type="powershell">
+            <![CDATA[
+            Get-WmiObject -Namespace "ROOT\ccm\Policy\Machine\ActualConfig" -Class "CCM_SoftwareUpdatesClientConfig"
+            ]]>
+        </script>
+        <script name="winEvents" enabled="true" type="powershell" extra_file="$env:TEMP\winEvents.csv">
+            <![CDATA[
+            $events = @(
+			"System",
+			"Application",
+			"Setup",
+			"Microsoft-Windows-WMI-Activity/Operational"
+			"Microsoft-Windows-Setup/Analytic",
+			"General Logging",
+			"HardwareEvents",
+			"Microsoft-Windows-Crashdump/Operational",
+			"Microsoft-Windows-Dism-Api/Analytic",
+			"Microsoft-Windows-EventLog-WMIProvider/Debug",
+			"Microsoft-Windows-EventLog/Analytic",
+			"Microsoft-Windows-EventLog/Debug")
+            foreach ($event in $events)
+            {
+                $res = Get-WinEvent -LogName $event -Oldest
+                if($res.Count)
+                {
+                    $res | Select-Object TimeCreated,LevelDisplayName,ProviderName,Id,Message,MachineName | `
+                    Export-Csv -NoTypeInformation "$env:TEMP\winEvents.csv" -Append
+                }
+            }
+            ]]>
+        </script>
+        <script name="getTpm" enabled="true" type="powershell">
+            <![CDATA[
+            Get-Tpm
+            ]]>
+        </script>
+        <script name="manageBde" enabled="true" type="winbatch">
+            <![CDATA[
+            manage-bde -status
+            ]]>
+        </script>
+        <script name="certUtil" enabled="true" type="winbatch">
+            <![CDATA[
+            certutil -store root
+            ]]>
+        </script>
+        <script name="kmsActivation" enabled="true" type="winbatch">
+            <![CDATA[
+            nslookup -type=all _vlmcs._tcp
+            dsregcmd /status
+            cscript.exe //Nologo %windir%\system32\slmgr.vbs /dlv
+            cscript.exe //Nologo %windir%\System32\slmgr.vbs /ao-list
+            ]]>
+        </script>
+        <script name="licenseLogs" enabled="true" type="winbatch" extra_file="$env:TEMP\licenseLogs.txt">
+            <![CDATA[
+            licensingdiag.exe -report "%TEMP%\licenseLogs.txt"
+            ]]>
+        </script>
+        <script name="verifier" enabled="true" type="winbatch">
+            <![CDATA[
+            verifier.exe /query
+            ]]>
+        </script>
+        <script name="bcdEdit" enabled="true" type="winbatch">
+            <![CDATA[
+            bcdedit.exe /enum all /v
+            ]]>
+        </script>
+        <script name="systeminfo" enabled="true" type="winbatch">
+            <![CDATA[
+            systeminfo
+            ]]>
+        </script>
+        <script name="dismGetDrivers" enabled="true" type="winbatch">
+            <![CDATA[
+            dism /online /get-drivers /Format:Table
+            ]]>
+        </script>
+        <script name="psWmiPnpEntity" enabled="true" type="powershell">
+            <![CDATA[
+            Get-WmiObject Win32_PnPEntity
+            ]]>
+        </script>
+        <script name="pnpUtilEnumDrivers" enabled="true" type="winbatch">
+            <![CDATA[
+            pnputil.exe /enum-drivers
+            ]]>
+        </script>
+        <script name="mdmAutopilotDiag" enabled="false" type="winbatch" extra_file="$env:TEMP\AutopilotDiag.cab">
+            <![CDATA[
+            MDMDiagnosticsTool.exe -area Autopilot;Tpm -cab "%_TEMPDIR%\AutopilotDiag.cab"
+            ]]>
+        </script>
+        <script name="powerConfigSettings" enabled="true" type="winbatch">
+            <![CDATA[
+            powercfg /L
+            powercfg /aliases
+            Powercfg /a 
+            powercfg /qh
+            ]]>
+        </script>
+        <script name="powerCfgBatteryReport" enabled="true" type="winbatch" extra_file="$env:TEMP\powerCfgBatteryReport.html">
+            <![CDATA[
+            powercfg /batteryreport /duration 14 /output "%TEMP%\powerCfgBatteryReport.html"
+            ]]>
+        </script>
+        <script name="powerCfgEnergyOutput" enabled="true" type="winbatch" extra_file="$env:TEMP\powerCfgEnergyOutput.html">
+            <![CDATA[
+            powercfg /srumutil /output "%TEMP%\powerCfgEnergyOutput.html"
+            ]]>
+        </script>
+        <script name="powerCfgSleepDiag" enabled="true" type="winbatch" extra_file="$env:TEMP\powerCfgSleepDiag.html">
+            <![CDATA[
+            powercfg /SYSTEMSLEEPDIAGNOSTICS /OUTPUT "%TEMP%\powerCfgSleepDiag.html"
+            ]]>
+        </script>
+        <script name="powerCfgSleepStudy" enabled="true" type="winbatch" extra_file="$env:TEMP\powerCfgSleepStudy.html">
+            <![CDATA[
+            powercfg /SYSTEMPOWERREPORT /OUTPUT "%TEMP%\powerCfgSleepStudy.html"
+            ]]>
+        </script>
+        <script name="getBitLockerVolume" enabled="true" type="powershell">
+            <![CDATA[
+            Get-BitLockerVolume
+            ]]>
+        </script>
+        <script name="getComputerInfo" enabled="true" type="powershell">
+            <![CDATA[
+            Get-ComputerInfo -Verbose
+            ]]>
+        </script>
+        <script name="getLocalGroup" enabled="true" type="powershell">
+            <![CDATA[
+            Get-LocalGroup | Format-List *
+            ]]>
+        </script>
+        <script name="getLocalUser" enabled="true" type="powershell">
+            <![CDATA[
+            Get-LocalUser | Format-List *
+            ]]>
+        </script>
+        <script name="getWuIsPendingReboot" enabled="true" type="powershell">
+            <![CDATA[
+            Get-WUIsPendingReboot
+            ]]>
+        </script>
+        <script name="getWuAgentVersion" enabled="true" type="powershell">
+            <![CDATA[
+            Get-WUAVersion
+            ]]>
+        </script>
+        <script name="getWuLastInstallDate" enabled="true" type="powershell">
+            <![CDATA[
+            Get-WULastInstallationDate
+            ]]>
+        </script>
+        <script name="getWuLastScanSuccDate" enabled="true" type="powershell">
+            <![CDATA[
+            Get-WULastScanSuccessDate
+            ]]>
+        </script>
+    </scripts>
+    
+    <registry>
+        <key name="reg64BitUninstall" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall</key>
+        <key name="regAeDebug" enabled="true" recurse="false">HKLM:\Software\Microsoft\Windows NT\CurrentVersion\AeDebug</key>
+        <key name="regCurrentVersionRun" enabled="true" recurse="false">HKCU:\Software\Microsoft\Windows\CurrentVersion\Run</key>
+        <key name="regCurrentVersionRunOnce" enabled="true" recurse="false">HKLM:\Software\Microsoft\Windows\CurrentVersion\Runonce</key>
+        <key name="regCurrentVersion" enabled="true" recurse="false">HKLM:\Software\Microsoft\Windows\CurrentVersion</key>
+        <key name="regCrashControl" enabled="true" recurse="false">HKLM:\System\CurrentControlSet\Control\CrashControl</key>
+        <key name="regComponentBasedSrv" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing</key>
+        <key name="regFileExecution" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Option</key>
+        <key name="regGlobalProtect" enabled="true" recurse="true">HKLM:\SOFTWARE\Palo Alto Networks\GlobalProtect</key>
+        <key name="regErrorReporting" enabled="true" recurse="true">HKLM:\Software\Microsoft\Windows\Windows Error Reporting</key>
+        <key name="regMemManager" enabled="true" recurse="false">HKLM:\System\CurrentControlSet\Control\Session Manager\Memory Management</key>
+        <key name="regNtCurrentVersion" enabled="true" recurse="false">HKLM:\Software\Microsoft\Windows NT\CurrentVersion</key>
+        <key name="regOfficeUpdatePolicies" enabled="true" recurse="true">HKLM:\SOFTWARE\Policies\Microsoft\office\16.0\common\officeupdate</key>
+        <key name="regOobeSetup" enabled="true" recurse="false">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\OOBE</key>
+        <value name="regPreCacheOS_2004" enabled="true" value="PreCacheOS_2004">HKLM:\SOFTWARE\SCCM</value>
+        <value name="regPreCacheOS_2009" enabled="true" value="PreCacheOS_2009">HKLM:\SOFTWARE\SCCM</value>
+        <value name="regPreCacheOS_1909" enabled="true" value="PreCacheOS_1909">HKLM:\SOFTWARE\SCCM</value>
+        <key name="regSideBySide" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\SideBySide</key>
+        <key name="regSessionManager" enabled="true" recurse="false">HKLM:\System\CurrentControlSet\Control\Session Manager</key>
+        <key name="regShellServiceObjectDelayLoad" enabled="true" recurse="false">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\ShellServiceObjectDelayLoad</key>
+        <key name="regStateSetup" enabled="true" recurse="false">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\State</key>
+        <key name="regSoftwareProtectionPlatform" enabled="true" recurse="false">HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SoftwareProtectionPlatform</key>
+        <key name="regShellServiceObjectDelayLoad" enabled="true" recurse="false">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\ShellServiceObjectDelayLoad</key>
+        <key name="regSystemWpa" enabled="true" recurse="true">HKLM:\SYSTEM\WPA</key>
+        <key name="regTrustedInstaller" enabled="true" recurse="true">HKLM:\SYSTEM\CurrentControlSet\services\TrustedInstaller</key>
+        <key name="regTimeZoneInfo" enabled="true" recurse="true">HKLM:\SYSTEM\CurrentControlSet\Control\TimeZoneInformation</key>
+        <key name="regTimeZone" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones</key>
+        <key name="regWinInstallers" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer</key>
+        <key name="regUninstall" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall</key>
+        <key name="regWinUpdatePolicies" enabled="true" recurse="true">HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate</key>
+        <key name="regWinUpdate" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate</key>
+        <key name="regWinPolicyMgr" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\PolicyManager\current\device\Update</key>
+        <key name="regWinSih" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\SIH</key>
+        <key name="regWow6432Uninstall" enabled="true" recurse="true">HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall</key>
+    </registry>
+    <filesystem>
+        <folder name="adobeReaderDcExe" enabled="true" copy="false" filter="AcroRd32.exe" recurse="false">${env:ProgramFiles(x86)}\Adobe\Acrobat Reader DC\Reader</folder>
+        <folder name="eventCompatibility" enabled="true" copy="true" filter="*compatibility*.evtx" recurse="false">$env:windir\system32\Winevt\Logs</folder>
+        <folder name="eventInventory" enabled="true" copy="true" filter="*inventory*.evtx" recurse="false">$env:windir\system32\Winevt\Logs</folder>
+        <folder name="eventTelemetry" enabled="true" copy="true" filter="*program-telemetry*.evtx" recurse="false">$env:windir\system32\Winevt\Logs</folder>
+        <folder name="googleChromeExe" enabled="true" copy="false" filter="chrome.exe" recurse="false">${env:ProgramFiles(x86)}\Google\Chrome\Application</folder>
+        <folder name="carbonBlackDll" enabled="true" copy="false" filter="CbEDRAMSI.dll" recurse="false">${env:ProgramFiles(x86)}\CarbonBlack</folder>
+        <folder name="certUtilLog" enabled="true" copy="false" filter="certutil.log" recurse="false">$env:windir</folder>
+        <folder name="configComponents" enabled="true" copy="true" filter="components" recurse="true">$env:windir\System32\config</folder>
+        <folder name="dbErrLog" enabled="true" copy="true" filter="dberr.txt" recurse="false">$env:windir\System32\catroot2</folder>
+        <folder name="dotNetDll" enabled="true" copy="false" filter="*.dll" recurse="true">$env:windir\Microsoft.NET</folder>
+        <folder name="dpInstLog" enabled="true" copy="false" filter="dpinst.log" recurse="false">$env:windir</folder>
+        <folder name="infLog" enabled="true" copy="true" filter="*.log" recurse="true">$env:windir\inf</folder>
+        <folder name="lpkSetupLog" enabled="true" copy="true" filter="lpksetup.log" recurse="false">$env:windir\temp</folder>
+        <folder name="oldWinPantherLogs" enabled="true" copy="true" filter="*.log" recurse="true">$env:SystemDrive\$Windows.~BT\Sources\Panther</folder>
+        <folder name="oldRollbackLogs" enabled="true" copy="true" filter="*.log" recurse="true">$env:SystemDrive\Windows.old\Windows\Panther</folder>
+        <folder name="reportingEvents" enabled="true" copy="true" filter="ReportingEvents.log" recurse="false">$env:windir\SoftwareDistribution</folder>
+        <folder name="refAssembliesDll" enabled="true" copy="false" filter="*.dll" recurse="true">$env:windir\Reference Assemblies</folder>
+        <folder name="sccmLogs" enabled="true" copy="true" filter="*.log" recurse="true">$env:windir\ccm\logs</folder>
+        <folder name="winPantherLogs" enabled="true" copy="true" filter="*.log" recurse="true">$env:windir\Panther</folder>
+        <folder name="winSystem32PantherLogs" enabled="true" copy="true" filter="*.log" recurse="true">$env:windir\system32\sysprep\panther</folder>
+        <folder name="winBTDir" enabled="true" copy="false" filter="*.log" recurse="true">$env:SystemDrive\$Windows.~BT</folder>
+        <folder name="winSystem32Dll" enabled="true" copy="false" filter="*.dll" recurse="true">$env:windir\system32</folder>
+        <folder name="winSystem32Exe" enabled="true" copy="false" filter="*.exe" recurse="true">$env:windir\system32</folder>
+        <folder name="winSystem32Sys" enabled="true" copy="false" filter="*.sys" recurse="true">$env:windir\system32</folder>
+        <folder name="winSysWow64Dll" enabled="true" copy="false" filter="*.dll" recurse="true">$env:windir\SysWOW64</folder>
+        <folder name="winSysWow64Exe" enabled="true" copy="false" filter="*.exe" recurse="true">$env:windir\SysWOW64</folder>
+        <folder name="winSysWow64Sys" enabled="true" copy="false" filter="*.sys" recurse="true">$env:windir\SysWOW64</folder>
+
+    </filesystem>
+</main>
