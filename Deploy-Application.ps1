@@ -63,11 +63,11 @@ Try {
 	## Variables: Application
 	[string]$appVendor = ''
 	[string]$appName = 'grabLogs'
-	[string]$appVersion = '1.0.2'
+	[string]$appVersion = '1.0.3'
 	[string]$appArch = ''
 	[string]$appLang = 'EN'
 	[string]$appRevision = '01'
-	[string]$appScriptVersion = '1.0.2'
+	[string]$appScriptVersion = '1.0.3'
 	[string]$appScriptDate = '12/30/2020'
 	[string]$appScriptAuthor = 'Brian Gonzalez'
 	##*===============================================
@@ -373,7 +373,7 @@ Try {
 		{
 			$zipCopyUserPw = get-content $plainTextPwPath  | convertto-securestring -asplaintext -force
 			$credentials = new-object -typename System.Management.Automation.PSCredential -argumentlist $zipCopyUser, $zipCopyUserPw
-			Remove-Item $plainTextPwPath
+			if (! ($plainTextPwPath.StartsWith('\\') ) { Remove-Item $plainTextPwPath }
 			New-PSDrive -Name J -PSProvider FileSystem -Root $shareRoot -Credential $credentials
 			New-Item "J:\$env:COMPUTERNAME\" -ItemType Directory -Force
 			Copy-Item -Force -Verbose -Path $zip -Destination "J:\$env:COMPUTERNAME\"
