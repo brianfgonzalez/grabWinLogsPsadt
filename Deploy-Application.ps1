@@ -61,14 +61,14 @@ Try {
 	##* VARIABLE DECLARATION
 	##*===============================================
 	## Variables: Application
-	[string]$appVendor = ''
+	[string]$appVendor = 'AKINT'
 	[string]$appName = 'grabLogs'
-	[string]$appVersion = ''
+	[string]$appVersion = '1.0.1'
 	[string]$appArch = ''
 	[string]$appLang = 'EN'
 	[string]$appRevision = '01'
-	[string]$appScriptVersion = '1.0.0'
-	[string]$appScriptDate = '12/29/2020'
+	[string]$appScriptVersion = '1.0.1'
+	[string]$appScriptDate = '12/30/2020'
 	[string]$appScriptAuthor = 'Brian Gonzalez'
 	##*===============================================
 	## Variables: Install Titles (Only set here to override defaults set by the toolkit)
@@ -254,38 +254,38 @@ Try {
 		}
 		#endregion
 
-		#region VARIABLES
+		#region MYVARIABLES
 		[xml] $config = Get-Content "$PSScriptRoot\config.xml"
-		$tempFolderName = ('grabLogs_{0}' -f (Get-Date -format "yyyyMMddhhmm") )
-		$tempFolder = ('{0}\{1}' -f $env:TEMP, $tempFolderName)
-		$remoteShare = "\\<SERVER>\<SHARE>"
-		$fileCopyUser = '<DOMAIN>\<USER>'
-		$timeStamp = (Get-Date -format "hhmm")
+		$outFolderName = ('grabLogs_{0}' -f (Get-Date -format "yyyyMMddhhmm") )
+		$outFolder = ('{0}\{1}' -f $env:TEMP, $outFolderName)
+		$startTimeStamp = (Get-Date -format "hhmm")
+		$shareRoot = "<SHARE>"
+		$zipCopyUser = "<DOMAIN>\<USER>" #Requires password in plaintext in root of script folder named pt.0
 		#endregion
-		New-Item $tempFolder -ItemType Directory -Force
+		New-Item $outFolder -ItemType Directory -Force
 		
 		#region SCRIPTS
 		foreach ( $script in $config.main.scripts.script )
 		{
 			if ($script.enabled -eq $true)
 			{
-				Show-InstallationProgress -StatusMessage ('{0}: Executing: {1}' -f $timeStamp, $script.name.ToUpper())
+				Show-InstallationProgress -StatusMessage ('ST{0} CT{1}: Executing: {2}' -f $startTimeStamp, (Get-Date -format "hhmm"), $script.name.ToUpper())
 				if ($script.type -eq "winbatch")
 				{
 					$script.'#cdata-section'.Trim() | Out-File $env:TEMP\tmp.bat -Encoding ascii
-					cmd.exe /c $env:TEMP\tmp.bat > $tempFolder\$($script.name).txt
+					cmd.exe /c $env:TEMP\tmp.bat > $outFolder\$($script.name).txt
 				}
 				if ($script.type -eq "powershell")
 				{
 					$script.'#cdata-section'.Trim() | Out-File $env:TEMP\tmp.ps1 -Encoding ascii
-					cmd.exe /c powershell -executionpolicy bypass -file  $env:TEMP\tmp.ps1 > $tempFolder\$($script.name).txt
+					cmd.exe /c powershell -executionpolicy bypass -file  $env:TEMP\tmp.ps1 > $outFolder\$($script.name).txt
 				}
 				if ($script.extra_file)
 				{
 					$extraFilePath = $ExecutionContext.InvokeCommand.ExpandString( $script.extra_file )
 					Copy-Item `
 						-Path $extraFilePath `
-						-Destination $tempFolder -Verbose
+						-Destination $outFolder -Verbose
 				}
 			}
 		}
@@ -296,10 +296,10 @@ Try {
 		{
 			if ($registry.enabled -eq $true)
 			{
-				Show-InstallationProgress -StatusMessage ('{0}: Scanning: {1}' -f $timeStamp, $registry.InnerText)
+				Show-InstallationProgress -StatusMessage ('ST{0} CT{1}: Scanning: {2}' -f $startTimeStamp, (Get-Date -format "hhmm"), $registry.InnerText)
 				Get-RegistryInfo `
 					-Key $registry.InnerText `
-					-Outfile ( '{0}\{1}.txt' -f $tempFolder, $($registry.name) ) `
+					-Outfile ( '{0}\{1}.txt' -f $outfolder, $($registry.name) ) `
 					-Recurse ( $($registry.recurse) -eq $true )
 			}
 		}
@@ -308,10 +308,10 @@ Try {
 		{
 			if ( $registry.enabled -eq $true )
 			{
-				Show-InstallationProgress -StatusMessage ('{0}: Scanning: {1}' -f $timeStamp, $registry.InnerText)
+				Show-InstallationProgress -StatusMessage ('ST{0} CT{1}: Scanning: {2}' -f $startTimeStamp, (Get-Date -format "hhmm"), $registry.InnerText)
 				Get-RegistryInfo `
 					-Key $registry.InnerText `
-					-Outfile ( '{0}\{1}.txt' -f $tempFolder, $($registry.name) ) `
+					-Outfile ( '{0}\{1}.txt' -f $outfolder, $($registry.name) ) `
 					-Recurse ( $($registry.recurse) -eq $true ) `
 					-Value $registry.value
 			}
@@ -326,69 +326,53 @@ Try {
 					$folderPath = $ExecutionContext.InvokeCommand.ExpandString( $folder.innerText )
 					if ( Test-Path $folderPath )
 					{
-						Show-InstallationProgress -StatusMessage ('{0}: Listing: "{1}" with Filter: "{2}"' -f $timeStamp, $folderPath.ToUpper(), $folder.filter.ToUpper())
-						New-Item ('{0}\{1}' -f $tempFolder,$folder.name) -ItemType Directory -Force
+						Show-InstallationProgress -StatusMessage ('ST{0} CT{1}: Listing: "{2}" with Filter: "{3}"' -f $startTimeStamp, (Get-Date -format "hhmm"), $folderPath.ToUpper(), $folder.filter.ToUpper())
+						New-Item ('{0}\{1}' -f $outfolder,$folder.name) -ItemType Directory -Force
 		
 						Get-FolderContentInfo -Path $folderPath `
-							-Outfile ('{0}\{1}\{1}_LIST.txt' -f $tempFolder,$folder.name) `
+							-Outfile ('{0}\{1}\{1}_LIST.txt' -f $outfolder,$folder.name) `
 							-Filter $folder.filter -Recurse ( $($folder.recurse) -eq $true ) `
 						
 						if ($folder.copy -eq $true) {
-							Show-InstallationProgress -StatusMessage ('{0}: Copying: "{1}" with Filter "{2}"' -f $timeStamp, $folderPath.ToUpper(), $folder.filter.ToUpper())
+							Show-InstallationProgress -StatusMessage ('ST{0} CT{1}: Copying: "{2}" with Filter "{3}"' -f $startTimeStamp, (Get-Date -format "hhmm"), $folderPath.ToUpper(), $folder.filter.ToUpper())
 							Start-Robocopy `
 								-SourceFolder $folderPath `
 								-Filter $folder.filter `
-								-Destination ('{0}\{1}' -f $tempFolder, $folder.name) `
-								-Log ('{0}\{1}\{1}_COPYLOG.txt' -f $tempFolder,$folder.name)
+								-Destination ('{0}\{1}' -f $outfolder, $folder.name) `
+								-Log ('{0}\{1}\{1}_COPYLOG.txt' -f $outfolder,$folder.name)
 						}
 					} else {
-						Write-Host ('{0}: "{1}" Test-Path failed...' -f $timeStamp, $folderPath.ToUpper())
+						Write-Host ('{0}: "{1}" Test-Path failed...' -f $startTimeStamp, $folderPath.ToUpper())
 					}
 				}
 		}
 		#endregion
 		
 		#region ZIPFILE
-		$src = $tempFolder
-		$zip = ('{0}\{1}.zip' -f $env:SystemDrive, $tempFolderName)
-		Show-InstallationProgress -StatusMessage ('{0}: Compressing: {1}' -f $timeStamp, $zip.ToUpper())
+		$src = $outFolder
+		$zip = ('{0}\{1}.zip' -f $env:SystemDrive, $outFolderName)
+		Show-InstallationProgress -StatusMessage ('ST{0} CT{1}: Compressing: {2}' -f $startTimeStamp, (Get-Date -format "hhmm"), $zip.ToUpper())
 		[void][Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem')
 		[IO.Compression.ZipFile]::CreateFromDirectory($src, $zip, 'Optimal', $false)
 		#endregion
 
 		#region COPYZIP
-		$plaintext_password_file = "$PSScriptRoot\plaintext.txt" # Stores the password in plain text - only used once, then deleted
-		$encryted_password_file = "$PSScriptRoot\copy_pass.txt"  # Stores the password in "safe" encrypted form - used for subsequent runs of the script
-																 #   - can only be decrypted by the windows user that wrote it
-		$file_copy_user = $fileCopyUser
-
-		# Check to see if there is a new plaintext password
-		if (Test-Path $plaintext_password_file)
+		$plainTextPwPath = "$PSScriptRoot\pt.0"
+		if (Test-Path $plainTextPwPath)
 		{
-			# Read in plaintext password, convert to a secure-string, convert to an encrypted-string, and write out, for use later
-			get-content $plaintext_password_file | `
-				convertto-securestring -asplaintext -force | `
-				convertfrom-securestring | out-file $encryted_password_file
-			# Now we have encrypted password, remove plain text for safety
-			Remove-Item $plaintext_password_file
+			$zipCopyUser = get-content $plainTextPwPath
+			$credentials = new-object -typename System.Management.Automation.PSCredential -argumentlist $zipCopyUser, $zipCopyUser
+			Remove-Item $plainTextPwPath
+			New-PSDrive -Name J -PSProvider FileSystem -Root $shareRoot -Credential $credentials
+			New-Item "J:\$env:COMPUTERNAME\" -ItemType Directory -Force
+			Copy-Item -Force -Verbose -Path $zip -Destination "J:\$env:COMPUTERNAME\"
+			Remove-PSDrive -Name J -Force
 		}
-
-
-		# Read in the encrypted password, convert to a secure-string
-		$pass = get-content $encryted_password_file | convertto-securestring
-
-		# create a credential object for the other user, using username and password stored in secure-string
-		$credentials = new-object -typename System.Management.Automation.PSCredential -argumentlist $file_copy_user,$pass
-
-		# Connect to network file location as the other user and map to drive J:
-		New-PSDrive -Name J -PSProvider FileSystem -Root $remoteShare -Credential $credentials
-		New-Item "J:\$env:COMPUTERNAME\" -ItemType Directory -Force
-		Copy-Item -Force -Verbose -Path $zip -Destination "J:\$env:COMPUTERNAME\"
-		Remove-PSDrive -Name J -Force
+		#endregion
 		
 		#region CLEANUP
-		Show-InstallationProgress -StatusMessage ('{0}: Cleaning Up: {1}' -f $timeStamp, $src)
-		Remove-Item -Path $tempFolder -Force -Recurse
+		Show-InstallationProgress -StatusMessage ('ST{0} CT{1}: Cleaning Up: {2}' -f $startTimeStamp, (Get-Date -format "hhmm"), $src)
+		Remove-Item -Path $outFolder -Force -Recurse
 		#endregion
 
 
