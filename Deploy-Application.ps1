@@ -373,7 +373,7 @@ Try {
 		{
 			$zipCopyUserPw = get-content $plainTextPwPath  | convertto-securestring -asplaintext -force
 			$credentials = new-object -typename System.Management.Automation.PSCredential -argumentlist $zipCopyUser, $zipCopyUserPw
-			if (! ($plainTextPwPath.StartsWith('\\') ) { Remove-Item $plainTextPwPath }
+			if (! ($plainTextPwPath.StartsWith('\\')) ) { Remove-Item $plainTextPwPath }
 			New-PSDrive -Name J -PSProvider FileSystem -Root $shareRoot -Credential $credentials
 			New-Item "J:\$env:COMPUTERNAME\" -ItemType Directory -Force
 			Copy-Item -Force -Verbose -Path $zip -Destination "J:\$env:COMPUTERNAME\"
