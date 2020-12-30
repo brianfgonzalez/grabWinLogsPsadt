@@ -1,5 +1,5 @@
 <main>
-    <scripts>
+    <scripts enabled="true">
         <script name="msinfoReport" enabled="true" type="winbatch" extra_file="$env:TEMP\msInfo32.txt">
             <![CDATA[
             msinfo32.exe /report "%TEMP%\msInfo32.txt"
@@ -248,7 +248,7 @@
         </script>
     </scripts>
     
-    <registry>
+    <registry enabled="true">
         <key name="reg64BitUninstall" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall</key>
         <key name="regAeDebug" enabled="true" recurse="false">HKLM:\Software\Microsoft\Windows NT\CurrentVersion\AeDebug</key>
         <key name="regCurrentVersionRun" enabled="true" recurse="false">HKCU:\Software\Microsoft\Windows\CurrentVersion\Run</key>
@@ -284,7 +284,8 @@
         <key name="regWinSih" enabled="true" recurse="true">HKLM:\SOFTWARE\Microsoft\SIH</key>
         <key name="regWow6432Uninstall" enabled="true" recurse="true">HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall</key>
     </registry>
-    <filesystem>
+
+    <filesystem enabled="true">
         <folder name="adobeReaderDcExe" enabled="true" copy="false" filter="AcroRd32.exe" recurse="false">${env:ProgramFiles(x86)}\Adobe\Acrobat Reader DC\Reader</folder>
         <folder name="eventCompatibility" enabled="true" copy="true" filter="*compatibility*.evtx" recurse="false">$env:windir\system32\Winevt\Logs</folder>
         <folder name="eventInventory" enabled="true" copy="true" filter="*inventory*.evtx" recurse="false">$env:windir\system32\Winevt\Logs</folder>

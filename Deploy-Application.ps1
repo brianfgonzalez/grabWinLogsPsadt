@@ -61,13 +61,13 @@ Try {
 	##* VARIABLE DECLARATION
 	##*===============================================
 	## Variables: Application
-	[string]$appVendor = 'AKINT'
+	[string]$appVendor = ''
 	[string]$appName = 'grabLogs'
-	[string]$appVersion = '1.0.1'
+	[string]$appVersion = '1.0.2'
 	[string]$appArch = ''
 	[string]$appLang = 'EN'
 	[string]$appRevision = '01'
-	[string]$appScriptVersion = '1.0.1'
+	[string]$appScriptVersion = '1.0.2'
 	[string]$appScriptDate = '12/30/2020'
 	[string]$appScriptAuthor = 'Brian Gonzalez'
 	##*===============================================
@@ -254,17 +254,19 @@ Try {
 		}
 		#endregion
 
-		#region MYVARIABLES
+		#region VARIABLES
 		[xml] $config = Get-Content "$PSScriptRoot\config.xml"
 		$outFolderName = ('grabLogs_{0}' -f (Get-Date -format "yyyyMMddhhmm") )
 		$outFolder = ('{0}\{1}' -f $env:TEMP, $outFolderName)
 		$startTimeStamp = (Get-Date -format "hhmm")
-		$shareRoot = "<SHARE>"
-		$zipCopyUser = "<DOMAIN>\<USER>" #Requires password in plaintext in root of script folder named pt.0
+		$shareRoot = "\\CLTHMP601.ad.ak-int.net\ApplicationSources\OperatingSystemDeployment\OSDResults\Logs"
+		$zipCopyUser = "akint\svc_SCCM_DJ"
 		#endregion
 		New-Item $outFolder -ItemType Directory -Force
 		
 		#region SCRIPTS
+		if ( $config.main.scripts.enabled -eq $true )
+		{
 		foreach ( $script in $config.main.scripts.script )
 		{
 			if ($script.enabled -eq $true)
@@ -289,9 +291,12 @@ Try {
 				}
 			}
 		}
+		}
 		#endregion
 
 		#region REGISTRY
+		if ( $config.main.registry.enabled -eq $true )
+		{
 		foreach ( $registry in $config.main.registry.key )
 		{
 			if ($registry.enabled -eq $true)
@@ -316,9 +321,12 @@ Try {
 					-Value $registry.value
 			}
 		}
+		}
 		#endregion
 
 		#region FILESYSTEM
+		if ( $config.main.filesystem.enabled -eq $true )
+		{
 		foreach ( $folder in $config.main.filesystem.folder )
 		{
 				if ($folder.enabled -eq $true)
@@ -326,7 +334,8 @@ Try {
 					$folderPath = $ExecutionContext.InvokeCommand.ExpandString( $folder.innerText )
 					if ( Test-Path $folderPath )
 					{
-						Show-InstallationProgress -StatusMessage ('ST{0} CT{1}: Listing: "{2}" with Filter: "{3}"' -f $startTimeStamp, (Get-Date -format "hhmm"), $folderPath.ToUpper(), $folder.filter.ToUpper())
+						Show-InstallationProgress `
+							-StatusMessage ('ST{0} CT{1}: Listing: "{2}" with Filter: "{3}"' -f $startTimeStamp, (Get-Date -format "hhmm"), $folderPath.ToUpper(), $folder.filter.ToUpper())
 						New-Item ('{0}\{1}' -f $outfolder,$folder.name) -ItemType Directory -Force
 		
 						Get-FolderContentInfo -Path $folderPath `
@@ -334,7 +343,8 @@ Try {
 							-Filter $folder.filter -Recurse ( $($folder.recurse) -eq $true ) `
 						
 						if ($folder.copy -eq $true) {
-							Show-InstallationProgress -StatusMessage ('ST{0} CT{1}: Copying: "{2}" with Filter "{3}"' -f $startTimeStamp, (Get-Date -format "hhmm"), $folderPath.ToUpper(), $folder.filter.ToUpper())
+							Show-InstallationProgress `
+								-StatusMessage ('ST{0} CT{1}: Copying: "{2}" with Filter "{3}"' -f $startTimeStamp, (Get-Date -format "hhmm"), $folderPath.ToUpper(), $folder.filter.ToUpper())
 							Start-Robocopy `
 								-SourceFolder $folderPath `
 								-Filter $folder.filter `
@@ -345,6 +355,7 @@ Try {
 						Write-Host ('{0}: "{1}" Test-Path failed...' -f $startTimeStamp, $folderPath.ToUpper())
 					}
 				}
+		}
 		}
 		#endregion
 		
@@ -360,8 +371,8 @@ Try {
 		$plainTextPwPath = "$PSScriptRoot\pt.0"
 		if (Test-Path $plainTextPwPath)
 		{
-			$zipCopyUser = get-content $plainTextPwPath
-			$credentials = new-object -typename System.Management.Automation.PSCredential -argumentlist $zipCopyUser, $zipCopyUser
+			$zipCopyUserPw = get-content $plainTextPwPath  | convertto-securestring -asplaintext -force
+			$credentials = new-object -typename System.Management.Automation.PSCredential -argumentlist $zipCopyUser, $zipCopyUserPw
 			Remove-Item $plainTextPwPath
 			New-PSDrive -Name J -PSProvider FileSystem -Root $shareRoot -Credential $credentials
 			New-Item "J:\$env:COMPUTERNAME\" -ItemType Directory -Force
